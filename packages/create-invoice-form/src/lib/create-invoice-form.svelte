@@ -36,6 +36,7 @@
   let secondaryColor = activeConfig.colors.secondary;
   let currencyManager = initializeCurrencyManager(currencies);
 
+
   const extractUniqueNetworkNames = (): string[] => {
     const networkSet = new Set<string>();
 
@@ -51,8 +52,12 @@
   };
 
   let networks: string[] = extractUniqueNetworkNames();
+  let periods: string[] = ['minutes','hours','days','years', 'weeks', 'months'];
 
   let network: string | undefined = undefined;
+  let isSubscribed: boolean = false;
+  let period: string | undefined = undefined;
+  let cycle: string | undefined = undefined;
   let currency: CurrencyTypes.CurrencyDefinition | undefined = undefined;
   let invoiceCurrency: CurrencyTypes.CurrencyDefinition | undefined = undefined;
 
@@ -70,6 +75,13 @@
       );
     }
   };
+
+  const handleCycleChange= (newCycle: string) => {
+    if (newCycle) {
+      cycle = newCycle;
+    }
+  };
+
 
   let activeRequest: any = null;
   let canSubmit = false;
@@ -126,6 +138,75 @@
 
   const isValidItem = (item: any) =>
     item.name && item.quantity > 0 && Number(item.unitPrice) > 0;
+
+    $: {
+  if (isSubscribed && formData.issuedOn && period && cycle)  {
+    const calculateDueDate = (issuedOn: any, cycle: any, period: any) => {
+      if (!period) {
+        throw new Error("Period is required to calculate the due date.");
+      }
+
+      const issuedDate = new Date(issuedOn);
+      let dueDate = new Date(issuedDate);
+
+      // Split period into value and unit
+      const parts = period.toLowerCase().split(" ");
+      if (parts.length !== 2) {
+        throw new Error("Period must be in the format 'value unit', e.g., '2 days'.");
+      }
+
+      const value = parseInt(parts[0], 10);
+      const unit = parts[1];
+
+      if (isNaN(value)) {
+        throw new Error("The value in the period must be a number.");
+      }
+
+      switch (unit) {
+        case "minutes":
+          dueDate.setMinutes(dueDate.getMinutes() + value);
+          break;
+        case "hourly":
+        case "hours":
+          dueDate.setHours(dueDate.getHours() + value);
+          break;
+        case "daily":
+        case "days":
+          dueDate.setDate(dueDate.getDate() + value);
+          break;
+        case "weekly":
+        case "weeks":
+          dueDate.setDate(dueDate.getDate() + value * 7);
+          break;
+        case "monthly":
+        case "months":
+          dueDate.setMonth(dueDate.getMonth() + value);
+          dueDate = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 0); // Last day of the month
+          break;
+        case "yearly":
+        case "years":
+          dueDate.setFullYear(dueDate.getFullYear() + value);
+          dueDate = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 0); // Last day of the year
+          break;
+        default:
+          throw new Error("Unsupported period unit. Use 'minutes', 'hours', 'days', 'weeks', 'months', or 'years'.");
+      }
+
+      return dueDate.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+    };
+
+    if (!formData.issuedOn) {
+      throw new Error("IssuedOn date is required to calculate the due date.");
+    }
+
+    formData.dueDate = calculateDueDate(formData.issuedOn, cycle, period);
+  } else {
+    formData.dueDate; // Or handle this case accordingly
+  }
+}
+
+console.log(formData.dueDate)
+
 
   $: {
     const basicDetailsFilled =
@@ -218,10 +299,14 @@
       config={activeConfig}
       bind:defaultCurrencies
       bind:network
+      bind:period
       {handleInvoiceCurrencyChange}
       {handleCurrencyChange}
       {handleNetworkChange}
+      {handleCycleChange}
+      {periods}
       {networks}
+      bind:isSubscribed
       {currencyManager}
       {invoiceCurrency}
     />
