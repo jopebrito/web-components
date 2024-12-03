@@ -461,7 +461,7 @@
                 </div>
               </th>
             {/if}
-            <th on:click={() =>  console.log(requests)}>
+            <th on:click={() => console.log(requests)}>
               <div>
                 Created <i class="caret">
                   {#if sortOrder === "asc" && sortColumn === "timestamp"}
