@@ -28,7 +28,9 @@
   export let handleInvoiceCurrencyChange: (value: string) => void;
   export let handleCurrencyChange: (value: string) => void;
   export let handleNetworkChange: (chainId: string) => void;
+  export let handleCycleChange: (value: string) => void;
   export let networks;
+  export let cycles;
   export let defaultCurrencies: any = [];
   export let currencyManager: any;
   export let invoiceCurrency: CurrencyTypes.CurrencyDefinition | undefined;
@@ -37,7 +39,8 @@
     | CurrencyTypes.NativeCurrency
     | undefined;
   export let network: any;
-
+  export let period: any;
+  export let cycle: any;
   let validationErrors = {
     payeeAddress: false,
     clientAddress: false,
@@ -48,10 +51,11 @@
       email: false,
     },
   };
-
+  
+  let isSubscribed: boolean = false;
   let showPayeeAddressInput = false;
   let filteredSettlementCurrencies: CurrencyTypes.CurrencyDefinition[] = [];
-
+  
   const validateEmail = (email: string, type: "sellerInfo" | "buyerInfo") => {
     validationErrors[`${type}`].email = !isEmail(email);
   };
@@ -117,6 +121,7 @@
     }
   };
 
+
   const addInvoiceItem = () => {
     const newItem = {
       name: "",
@@ -147,6 +152,8 @@
   $: if (!showPayeeAddressInput && formData.creatorId) {
     formData.payeeAddress = formData.creatorId;
   }
+
+  $: formData.isSubscribed = isSubscribed;
 
   $: {
     // Filter settlement currencies whenever network, invoiceCurrency, or currencyManager changes
@@ -456,6 +463,15 @@
       </div>
     </div>
     <div class="invoice-form-dates">
+      <div class="subscription-toggle">
+        <label>
+          <input
+            type="checkbox"
+            bind:checked={isSubscribed}
+          />
+          Subscription
+        </label>
+      </div>
       <Input
         id="issuedOn"
         type="date"
@@ -463,14 +479,37 @@
         label="Issued Date"
         {handleInput}
       />
+      {#if isSubscribed}
       <Input
+        id="period"
+        type="number"
+        value={formData.period}
+        placeholder=3
+        {handleInput}
+        label="Periods"
+    />
+      <Dropdown
+        {config}
+        placeholder="cycle"
+        selectedValue={cycle}
+        options={cycles
+        .filter((newCycleItem) => newCycleItem)
+        .map((newCycleItem) => ({
+          value: newCycleItem,
+          label: newCycleItem[0]?.toUpperCase() + newCycleItem?.slice(1),
+        }))}
+          onchange={handleCycleChange}
+        />
+      {:else}
+        <Input
         id="dueDate"
         type="date"
         min={inputDateFormat(formData.issuedOn)}
         value={new Date(formData.issuedOn).getTime() + 24 * 60 * 60 * 1000}
         label="Due Date"
         {handleInput}
-      />
+    />
+      {/if}
     </div>
   </div>
   <div class="invoice-form-table-section">
@@ -614,6 +653,22 @@
   table {
     border-collapse: collapse;
     border-spacing: 0;
+  }
+
+  .subscription-toggle {
+    display: flex;
+    align-items: left;
+    gap: 8px;
+  }
+
+  .subscription-toggle label {
+    background-color: transparent !important;
+    color: #050b20;
+    display: flex;
+    align-items: right;
+    font-weight: bold;
+    font-size: 14px;
+    gap: 6px;
   }
 
   .invoice-form {

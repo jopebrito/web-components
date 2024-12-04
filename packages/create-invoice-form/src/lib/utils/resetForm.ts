@@ -6,6 +6,9 @@ export function getInitialFormData() {
     payerAddress: "",
     payeeAddress: "",
     dueDate: "",
+    cycle: "days",
+    period: 1,
+    isSubscribed: false,
     issuedOn: new Date().toISOString(),
     miscellaneous: {
       labels: [],

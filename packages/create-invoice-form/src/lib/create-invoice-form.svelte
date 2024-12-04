@@ -35,6 +35,7 @@
   let mainColor = activeConfig.colors.main;
   let secondaryColor = activeConfig.colors.secondary;
   let currencyManager = initializeCurrencyManager(currencies);
+  let dueDate: string | "undefined";
 
   const extractUniqueNetworkNames = (): string[] => {
     const networkSet = new Set<string>();
@@ -51,8 +52,12 @@
   };
 
   let networks: string[] = extractUniqueNetworkNames();
+  let cycles: string[] = ['minutes','hours','days','years', 'weeks', 'months'];
 
   let network: string | undefined = undefined;
+  let isSubscribed: boolean = false;
+  let period: string | undefined = undefined;
+  let cycle: string | undefined = undefined;
   let currency: CurrencyTypes.CurrencyDefinition | undefined = undefined;
   let invoiceCurrency: CurrencyTypes.CurrencyDefinition | undefined = undefined;
 
@@ -68,6 +73,13 @@
           curr.type === Types.RequestLogic.CURRENCY.ISO4217 ||
           curr.network === newNetwork
       );
+    }
+  };
+
+  const handleCycleChange= (newCycle: string) => {
+    if (newCycle) {
+      cycle = newCycle;
+      formData.cycle = newCycle;
     }
   };
 
@@ -118,8 +130,8 @@
       account = getAccount(wagmiConfig);
     }
   }
-
-  $: {
+  
+$: {
     formData.creatorId = (account?.address ?? "") as string;
     invoiceTotals = calculateInvoiceTotals(formData.invoiceItems);
   }
@@ -127,11 +139,49 @@
   const isValidItem = (item: any) =>
     item.name && item.quantity > 0 && Number(item.unitPrice) > 0;
 
+
+  function calculateDueDate(issuedOn: string, cycle: string, period: number): string {
+    const issuedDate = new Date(issuedOn);
+    let dueDate = new Date(issuedDate);
+
+    switch (cycle) {
+      case 'minutes':
+        dueDate.setMinutes(issuedDate.getMinutes() + period);
+        break;
+      case 'hours':
+        dueDate.setHours(issuedDate.getHours() + period);
+        break;
+      case 'days':
+        dueDate.setDate(issuedDate.getDate() + period);
+        break;
+      case 'weeks':
+        dueDate.setDate(issuedDate.getDate() + period * 7);
+        break;
+      case 'months':
+        dueDate.setMonth(issuedDate.getMonth() + period);
+        break;
+      case 'years':
+        dueDate.setFullYear(issuedDate.getFullYear() + period);
+        break;
+      default:
+        throw new Error(`Unsupported cycle: ${cycle}`);
+    }
+
+    return dueDate.toISOString();
+  }
+
+  $: if (formData.isSubscribed) {
+      formData.dueDate = calculateDueDate(formData.issuedOn, formData.cycle, formData.period);
+    }
+    // If not subscribed, keep the due date from the input
+
+
+
   $: {
     const basicDetailsFilled =
       formData.payeeAddress &&
       formData.payerAddress &&
-      formData.dueDate &&
+      formData.dueDate  &&
       formData.invoiceNumber &&
       formData.issuedOn &&
       invoiceCurrency &&
@@ -140,6 +190,19 @@
     const hasItems =
       formData.invoiceItems.length > 0 &&
       formData.invoiceItems.every(isValidItem);
+
+    
+    console.log("formData.issuedOn")  
+    console.log(formData.issuedOn)
+    console.log("formData.dueDate")  
+    console.log(formData.dueDate)
+    console.log("formData.cycle")
+    console.log(formData.cycle)
+    console.log("formData.period")
+    console.log(formData.period)
+    console.log("formData.isSubscribed")
+    console.log(formData.isSubscribed)
+
 
     canSubmit = basicDetailsFilled && hasItems && requestNetwork ? true : false;
   }
@@ -218,10 +281,14 @@
       config={activeConfig}
       bind:defaultCurrencies
       bind:network
+      bind:cycle
       {handleInvoiceCurrencyChange}
       {handleCurrencyChange}
       {handleNetworkChange}
+      {handleCycleChange}
+      {cycles}
       {networks}
+      bind:isSubscribed
       {currencyManager}
       {invoiceCurrency}
     />

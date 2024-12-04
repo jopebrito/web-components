@@ -461,9 +461,20 @@
                 </div>
               </th>
             {/if}
+            <th on:click={() => console.log(requests)}>
+              <div>
+                Created <i class="caret">
+                  {#if sortOrder === "asc" && sortColumn === "timestamp"}
+                    <ChevronUp />
+                  {:else}
+                    <ChevronDown />
+                  {/if}
+                </i>
+              </div></th
+            >
             <th on:click={() => handleSort("timestamp")}>
               <div>
-                Created<i class="caret">
+                Subscribed<i class="caret">
                   {#if sortOrder === "asc" && sortColumn === "timestamp"}
                     <ChevronUp />
                   {:else}

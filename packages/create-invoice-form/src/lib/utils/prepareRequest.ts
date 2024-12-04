@@ -104,7 +104,12 @@ export const prepareRequestParams = ({
       meta: {
         format: "rnf_invoice",
         version: "0.0.3",
+
       },
+      subscrition: {
+        "isSubscribed": formData.isSubscribed, 
+        "cycle": formData.cycle, 
+        "period": formData.period},
       miscellaneous:
         formData.miscellaneous.labels.length > 0
           ? formData.miscellaneous
