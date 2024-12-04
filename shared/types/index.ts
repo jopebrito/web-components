@@ -11,8 +11,8 @@ export interface CustomFormData extends Omit<Invoice, "meta" | "creationDate"> {
   };
   invoiceNumber: string;
   isSubscribed: boolean;
-  Cycle: string;
-  Period: string;
+  cycle: string;
+  period: number;
   payerAddress: string;
   payeeAddress: string;
   dueDate: string;

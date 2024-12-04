@@ -28,9 +28,9 @@
   export let handleInvoiceCurrencyChange: (value: string) => void;
   export let handleCurrencyChange: (value: string) => void;
   export let handleNetworkChange: (chainId: string) => void;
-  export let handleCycleChange: (cycle: string) => void;
+  export let handleCycleChange: (value: string) => void;
   export let networks;
-  export let periods;
+  export let cycles;
   export let defaultCurrencies: any = [];
   export let currencyManager: any;
   export let invoiceCurrency: CurrencyTypes.CurrencyDefinition | undefined;
@@ -40,6 +40,7 @@
     | undefined;
   export let network: any;
   export let period: any;
+  export let cycle: any;
   let validationErrors = {
     payeeAddress: false,
     clientAddress: false,
@@ -51,7 +52,7 @@
     },
   };
   
-  export let isSubscribed: boolean = false;
+  let isSubscribed: boolean = false;
   let showPayeeAddressInput = false;
   let filteredSettlementCurrencies: CurrencyTypes.CurrencyDefinition[] = [];
   
@@ -120,13 +121,6 @@
     }
   };
 
-  const handlePeriodInput = (event: Event, itemIndex?: number) => {
-    const target = event.target as HTMLInputElement;
-    const { id, value } = target;
-    const fieldName = id.split("-")[0];
-
-    formData['Period'] = value;
-  };
 
   const addInvoiceItem = () => {
     const newItem = {
@@ -158,6 +152,8 @@
   $: if (!showPayeeAddressInput && formData.creatorId) {
     formData.payeeAddress = formData.creatorId;
   }
+
+  $: formData.isSubscribed = isSubscribed;
 
   $: {
     // Filter settlement currencies whenever network, invoiceCurrency, or currencyManager changes
@@ -485,22 +481,22 @@
       />
       {#if isSubscribed}
       <Input
-      id="Period"
-      type="text"
-      value={formData.Period}
-      placeholder="3"
-      label="Periods"
-      handleInput={handleInput}
+        id="period"
+        type="number"
+        value={formData.period}
+        placeholder=3
+        {handleInput}
+        label="Periods"
     />
       <Dropdown
-      {config}
-      placeholder="Cycle"
-      selectedValue={period}
-      options={periods
-        .filter((networkItem) => networkItem)
-        .map((networkItem) => ({
-          value: networkItem,
-          label: networkItem[0]?.toUpperCase() + networkItem?.slice(1),
+        {config}
+        placeholder="cycle"
+        selectedValue={cycle}
+        options={cycles
+        .filter((newCycleItem) => newCycleItem)
+        .map((newCycleItem) => ({
+          value: newCycleItem,
+          label: newCycleItem[0]?.toUpperCase() + newCycleItem?.slice(1),
         }))}
           onchange={handleCycleChange}
         />
